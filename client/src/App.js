@@ -1,24 +1,26 @@
 import React, { Component } from "react";
 import "./App.css";
 
+require("dotenv").config();
+
 /**
  * Client app component.
  */
 class App extends Component {
-  // The URL of the server for authenticating the client
-  static AUTHENTICATE_SPOTIFY_URL = "http://localhost:5000/login";
-
   /**
    * Instantiates the app state. The app state stores whether or not the user
    * has authenticated with Spotify.
    */
   constructor() {
     super();
-    const PARAMS = new URLSearchParams(window.location.search);
+    const PARAMS = new URLSearchParams(window.location.hash.substr(1));
 
     // Check if the user is authenticated from the URL arguments
-    this.isAuthenticated = PARAMS.get("authenticated") === "true";
-    console.log(`isAuthenticated? ${this.isAuthenticated}`);
+    this.accessToken = PARAMS.get("access_token");
+    this.isAuthenticated = this.accessToken !== null;
+    console.log(`accessToken = ${this.accessToken}`);
+
+    window.location.hash = '';
   }
 
   /**
@@ -38,7 +40,7 @@ class App extends Component {
       <br />
     ) : (
       <a
-        href={App.AUTHENTICATE_SPOTIFY_URL}
+        href={this.getAuthenticationEndpoint()}
         className="spotifyAuthenticationURL"
       >
         Connect with Spotify
@@ -61,6 +63,26 @@ class App extends Component {
         <div className="spotifyAuthentication">{authenticateSpotify}</div>
       </div>
     );
+  }
+
+  /**
+   * Returns the endpoint URL for authenticating the user with Spotify.
+   */
+  getAuthenticationEndpoint() {
+    let endpoint = process.env.REACT_APP_AUTHENTICATION_ENDPOINT;
+    let client_id = process.env.REACT_APP_AUTHENTICATION_CLIENT_ID;
+    let redirect_uri = process.env.REACT_APP_AUTHENTICATION_REDIRECT_URI;
+    let scopes = process.env.REACT_APP_AUTHENTICATION_SCOPES;
+
+    let params = new URLSearchParams({
+      client_id: client_id,
+      response_type: "token",
+      redirect_uri: redirect_uri,
+      scopes: scopes,
+      show_dialog: false
+    }).toString();
+
+    return `${endpoint}?${params}`;
   }
 }
 
