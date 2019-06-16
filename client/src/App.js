@@ -22,8 +22,18 @@ class App extends Component {
     this.api = this.isAuthenticated ? new SpotifyAPI(this.accessToken) : null;
     console.log(`accessToken = ${this.accessToken}`);
 
-    if (this.api) { // TODO: TEMPORARY
-      this.api.getLibraryTracksJSON();
+    // Temporarily log all of the info...
+    if (this.api) {
+      this.api.getLibraryTracksJSON().then(
+        resolved => {
+          console.log("got users songs");
+          console.log(resolved)
+        },
+        rejected => {
+          console.error("failed to get user's songs");
+          console.log(rejected);
+        }
+      )
     }
 
     window.location.hash = '';

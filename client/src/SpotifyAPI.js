@@ -15,32 +15,34 @@ class SpotifyAPI {
   }
 
   /**
-   * Returns the raw JSON data of all of the library tracks for the user.
+   * Gets the raw JSON data of all of the library tracks for the user.
    * @param {int} api_limit The maximum tracks per call (Spotify mandated).
-   *     This value must be strictly between 1 and 50.
-   * @returns {Promise<any>} A promise whose value is the array of all of the
-   *     library tracks for the user.
+   * @returns {Promise<any>} A promise which resolves to the array of all of
+   *     the library tracks for the user, or rejects to the error which
+   *     occured.
    */
   getLibraryTracksJSON(api_limit = 50) {
-    let tracks = [];
-    return Promise.resolve()
-      .then(() => {
-        // Make an initial call to get the first chunk of tracks
-        return this.api.getMySavedTracks({ limit: api_limit, offset: 0 });
-      })
-      .then(
-        initial => {
+    return new Promise((resolve, reject) => {
+      // Make an initial call to get the first chunk of tracks
+      let initialPromise = this.api.getMySavedTracks({
+        limit: api_limit,
+        offset: 0
+      });
+
+      let tracks = [];
+      initialPromise.then(
+        resolved => {
           // Append the tracks from the initial chunk into the array
-          tracks.push(...initial.items);
+          tracks.push(...resolved.items);
 
           // If there are no more chunks, return the tracks from it
-          if (!initial.next) {
-            return tracks;
+          if (!resolved.next) {
+            resolve(tracks);
           }
 
-          // Create a promise for each chunk we need to request
+          // Create a promise for each subsequent chunk we need to request
           let offsets = [
-            ...Array(Math.floor(initial.total / api_limit)).keys()
+            ...Array(Math.floor((resolved.total - 1) / api_limit)).keys()
           ].map(index => (index + 1) * api_limit);
           let promises = offsets.map(offset => {
             return this.api.getMySavedTracks({
@@ -50,19 +52,33 @@ class SpotifyAPI {
           });
 
           // Merge result of each promise into the tracks list and return it
-          return Promise.all(promises).then(promises => {
-            promises.forEach(promise => {
-              tracks.push(...promise.items);
-            });
+          return Promise.all(promises).then(
+            resolved => {
+              resolved.forEach(promise => {
+                tracks.push(...promise.items);
+              });
 
-            return tracks;
-          });
+              resolve(tracks);
+            },
+            rejected => {
+              reject(
+                new Error(
+                  `got first chunk of library tracks ` +
+                    `but failed to get subsequent: ${rejected}`
+                )
+              );
+            }
+          );
         },
-        reject => {
-          console.error(`failed to get user library tracks: ${reject.message}`);
-          return null;
+        rejected => {
+          reject(
+            new Error(
+              `failed to get first chunk of library tracks: ${rejected}`
+            )
+          );
         }
       );
+    });
   }
 }
 
