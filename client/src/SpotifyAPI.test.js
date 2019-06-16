@@ -9,6 +9,84 @@ describe("constructor", () => {
   });
 });
 
+describe("getAudioFeaturesJSON", () => {
+  it("should reject when error from SpotifyWebApi", async () => {
+    expect.assertions(3);
+    let spotifyWebApi = jest
+      .spyOn(SpotifyWebApi.prototype, "getAudioFeaturesForTracks")
+      .mockClear()
+      .mockImplementation(() => {
+        return new Promise(function(resolve, reject) {
+          reject("some error");
+        });
+      });
+
+    await expect(
+      new SpotifyAPI("").getAudioFeaturesJSON(["track1", "track2"])
+    ).rejects.toMatchObject(
+      new Error("failed to get track audio features: some error")
+    );
+
+    expect(spotifyWebApi).toHaveBeenCalledTimes(1);
+    expect(spotifyWebApi).toBeCalledWith(["track1", "track2"]);
+  });
+
+  it("should resolve when SpotifyWebApi resolves", async () => {
+    expect.assertions(5);
+    let spotifyWebApi = jest
+      .spyOn(SpotifyWebApi.prototype, "getAudioFeaturesForTracks")
+      .mockClear()
+      .mockImplementationOnce(() => {
+        return new Promise(function(resolve, reject) {
+          resolve({
+            audio_features: [
+              { track_id: "track1", volume: 1, bass: 2 },
+              { track_id: "track2", volume: 2, bass: 4 }
+            ]
+          });
+        });
+      })
+      .mockImplementationOnce(() => {
+        return new Promise(function(resolve, reject) {
+          resolve({
+            audio_features: [
+              { track_id: "track3", volume: 3, bass: 8 },
+              { track_id: "track4", volume: 4, bass: 16 }
+            ]
+          });
+        });
+      })
+      .mockImplementationOnce(() => {
+        return new Promise(function(resolve, reject) {
+          resolve({
+            audio_features: [{ track_id: "track5", volume: 5, bass: 32 }]
+          });
+        });
+      });
+
+    await expect(
+      new SpotifyAPI("").getAudioFeaturesJSON([
+        "track1",
+        "track2",
+        "track3",
+        "track4",
+        "track5"
+      ], 2)
+    ).resolves.toMatchObject([
+      { track_id: "track1", volume: 1, bass: 2 },
+      { track_id: "track2", volume: 2, bass: 4 },
+      { track_id: "track3", volume: 3, bass: 8 },
+      { track_id: "track4", volume: 4, bass: 16 },
+      { track_id: "track5", volume: 5, bass: 32 }
+    ]);
+
+    expect(spotifyWebApi).toHaveBeenCalledTimes(3);
+    expect(spotifyWebApi).toBeCalledWith(["track1", "track2"]);
+    expect(spotifyWebApi).toBeCalledWith(["track3", "track4"]);
+    expect(spotifyWebApi).toBeCalledWith(["track5"]);
+  });
+});
+
 describe("getLibraryTracksJSON", () => {
   it("should reject when initial error from SpotifyWebApi", async () => {
     expect.assertions(3);

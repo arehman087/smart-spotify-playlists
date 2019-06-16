@@ -26,17 +26,30 @@ class App extends Component {
     if (this.api) {
       this.api.getLibraryTracksJSON().then(
         resolved => {
-          console.log("got users songs");
-          console.log(resolved)
+          console.log("got user's songs");
+          console.log(resolved);
+
+          let trackIds = resolved.map(track => track.track.id);
+          console.log(trackIds);
+          this.api.getAudioFeaturesJSON(trackIds).then(
+            resolved => {
+              console.log("got user's songs audio features");
+              console.log(resolved);
+            },
+            rejected => {
+              console.error("failed to get user's songs audio features");
+              console.log(rejected);
+            }
+          );
         },
         rejected => {
           console.error("failed to get user's songs");
           console.log(rejected);
         }
-      )
+      );
     }
 
-    window.location.hash = '';
+    window.location.hash = "";
   }
 
   /**
