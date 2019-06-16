@@ -82,7 +82,7 @@ describe("authentication", () => {
     process.env.REACT_APP_AUTHENTICATION_SCOPES = "scope1 scope2 scope3";
 
     expect(new App().getAuthenticationEndpoint()).toBe(
-      "http://www.testendpoint.com?client_id=mock_client_id&response_type=token&redirect_uri=http%3A%2F%2Fwww.redirect.com&scopes=scope1+scope2+scope3&show_dialog=false"
+      "http://www.testendpoint.com?client_id=mock_client_id&response_type=token&redirect_uri=http%3A%2F%2Fwww.redirect.com&scope=scope1+scope2+scope3&show_dialog=false"
     );
 
     process.env = OLD_ENV;

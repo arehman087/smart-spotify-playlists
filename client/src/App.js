@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import "./App.css";
+import SpotifyAPI from "./SpotifyAPI";
 
 require("dotenv").config();
 
@@ -18,7 +19,12 @@ class App extends Component {
     // Check if the user is authenticated from the URL arguments
     this.accessToken = PARAMS.get("access_token");
     this.isAuthenticated = this.accessToken !== null;
+    this.api = this.isAuthenticated ? new SpotifyAPI(this.accessToken) : null;
     console.log(`accessToken = ${this.accessToken}`);
+
+    if (this.api) { // TODO: TEMPORARY
+      this.api.getLibraryTracksJSON();
+    }
 
     window.location.hash = '';
   }
@@ -78,10 +84,11 @@ class App extends Component {
       client_id: client_id,
       response_type: "token",
       redirect_uri: redirect_uri,
-      scopes: scopes,
+      scope: scopes,
       show_dialog: false
     }).toString();
 
+    console.log(`${endpoint}?${params}`);
     return `${endpoint}?${params}`;
   }
 }
