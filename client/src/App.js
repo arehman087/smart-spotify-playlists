@@ -26,15 +26,22 @@ class App extends Component {
     if (this.api) {
       this.api.getLibraryTracksJSON().then(
         resolved => {
+          let tracks = resolved;
           console.log("got user's songs");
           console.log(resolved);
 
-          let trackIds = resolved.map(track => track.track.id);
+          let trackIds = tracks.map(track => track.track.id);
           console.log(trackIds);
           this.api.getAudioFeaturesJSON(trackIds).then(
             resolved => {
+              let features = resolved;
+
               console.log("got user's songs audio features");
               console.log(resolved);
+
+              let merged = this.api.mergeTracksWithFeatures(tracks, features);
+              console.log("merged the user's songs & audio features");
+              console.log(merged);
             },
             rejected => {
               console.error("failed to get user's songs audio features");
